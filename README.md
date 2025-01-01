@@ -1,121 +1,41 @@
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
-// Animal class representing a generic animal
-class Animal {
-    private String name;
-    private String species;
-    private String habitat;
-
-    public Animal(String name, String species, String habitat) {
-        this.name = name;
-        this.species = species;
-        this.habitat = habitat;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getSpecies() {
-        return species;
-    }
-
-    public String getHabitat() {
-        return habitat;
-    }
-
-    public void displayInfo() {
-        System.out.println("Name: " + name);
-        System.out.println("Species: " + species);
-        System.out.println("Habitat: " + habitat);
-    }
+# بيانات المنتجات
+data = {
+    'ProductID': [1, 2, 3, 4, 5],
+    'ProductName': ['Laptop', 'Smartphone', 'Headphones', 'Camera', 'Smartwatch'],
+    'Category': ['Electronics', 'Electronics', 'Accessories', 'Electronics', 'Accessories'],
+    'Description': [
+        'High-performance laptop for gaming and work',
+        'Latest smartphone with cutting-edge technology',
+        'Wireless headphones with noise cancellation',
+        'DSLR camera for professional photography',
+        'Smartwatch with fitness tracking and notifications'
+    ]
 }
 
-// Zoo class to manage animals
-class Zoo {
-    private List<Animal> animals;
+# إنشاء DataFrame
+products = pd.DataFrame(data)
 
-    public Zoo() {
-        animals = new ArrayList<>();
-    }
+# استلام مدخلات المستخدم
+user_input = input("Enter a product you are interested in: ")
 
-    public void addAnimal(Animal animal) {
-        animals.add(animal);
-        System.out.println("Animal added successfully!");
-    }
+# تحويل البيانات إلى صيغة رقمية باستخدام TfidfVectorizer
+vectorizer = TfidfVectorizer()
+product_descriptions = vectorizer.fit_transform(products['Description'])
 
-    public void listAnimals() {
-        if (animals.isEmpty()) {
-            System.out.println("No animals in the zoo.");
-        } else {
-            System.out.println("Animals in the zoo:");
-            for (Animal animal : animals) {
-                animal.displayInfo();
-                System.out.println("--------------------");
-            }
-        }
-    }
+# حساب تشابه المنتج مع مدخل المستخدم
+user_input_vector = vectorizer.transform([user_input])
+similarities = cosine_similarity(user_input_vector, product_descriptions)
 
-    public void searchAnimal(String name) {
-        boolean found = false;
-        for (Animal animal : animals) {
-            if (animal.getName().equalsIgnoreCase(name)) {
-                System.out.println("Animal found:");
-                animal.displayInfo();
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
-            System.out.println("Animal not found.");
-        }
-    }
-}
+# العثور على المنتجات ذات أعلى تشابه
+similar_products = similarities[0].argsort()[-3:][::-1]
 
-// Main class to run the Zoo Management System
-public class ZooManagementSystem {
-    public static void main(String[] args) {
-        Zoo zoo = new Zoo();
-        Scanner scanner = new Scanner(System.in);
-
-        while (true) {
-            System.out.println("\nZoo Management System");
-            System.out.println("1. Add Animal");
-            System.out.println("2. List Animals");
-            System.out.println("3. Search Animal");
-            System.out.println("4. Exit");
-            System.out.print("Choose an option: ");
-
-            int choice = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
-
-            switch (choice) {
-                case 1:
-                    System.out.print("Enter animal name: ");
-                    String name = scanner.nextLine();
-                    System.out.print("Enter species: ");
-                    String species = scanner.nextLine();
-                    System.out.print("Enter habitat: ");
-                    String habitat = scanner.nextLine();
-                    zoo.addAnimal(new Animal(name, species, habitat));
-                    break;
-                case 2:
-                    zoo.listAnimals();
-                    break;
-                case 3:
-                    System.out.print("Enter animal name to search: ");
-                    String searchName = scanner.nextLine();
-                    zoo.searchAnimal(searchName);
-                    break;
-                case 4:
-                    System.out.println("Exiting system. Goodbye!");
-                    scanner.close();
-                    return;
-                default:
-                    System.out.println("Invalid option. Please try again.");
-            }
-        }
-    }
-}
+# عرض النتائج
+print("\nRecommended Products:")
+for idx in similar_products:
+    print(f"Product Name: {products.iloc[idx]['ProductName']}")
+    print(f"Category: {products.iloc[idx]['Category']}")
+    print(f"Description: {products.iloc[idx]['Description']}\n")
